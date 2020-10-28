@@ -16,7 +16,6 @@ import java.time.LocalDateTime
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
     private var sensorManager: SensorManager? = null
-    private var lightSensor: Sensor? = null
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     }
@@ -32,14 +31,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setContentView(R.layout.activity_main)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager?
-        lightSensor = sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT)
 
         val btn: ToggleButton = findViewById(R.id.toggleBtn)
         btn.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                onResume()
+                sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL)
             } else {
-                onPause()
+                sensorManager!!.unregisterListener(this)
             }
         }
     }
@@ -52,15 +50,5 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         data.add(Data("Time", LocalDateTime.now().toString()))
 
         recyclerView.adapter = DataAdapter(data)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        sensorManager!!.unregisterListener(this)
     }
 }
