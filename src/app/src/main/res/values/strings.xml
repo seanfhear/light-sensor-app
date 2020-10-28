@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">LightSensor</string>
+    <string name="app_name">Light Sensor</string>
+    <string name="inactive">INACTIVE</string>
+    <string name="active">ACTIVE</string>
 </resources>
