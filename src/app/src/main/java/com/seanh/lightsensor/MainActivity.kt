@@ -78,13 +78,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun writeEventsToFile() {
-        val fileName = "LightData.csv"
+        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val randomString = (1..32)
+                .map { _ -> kotlin.random.Random.nextInt(0, charPool.size) }
+                .map(charPool::get)
+                .joinToString("");
+        val fileName = "LightData-${randomString}.csv"
         val file = File(getExternalFilesDir("Data"), fileName)
         val fileExists = file.exists()
         if (!fileExists)
             file.createNewFile()
 
-        var dataString: String = ""
+        var dataString = ""
         for (entry in dataList) {
             dataString = dataString + entry.joinToString(",") + "\n"
         }
