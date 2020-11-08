@@ -8,7 +8,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -29,7 +28,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var dataList = ArrayList<Array<String>>()
     private var lastLightLevel: Float = 0.0F
 
-    private val LOCATION_PERMISSION_REQ_CODE = 1000;
+    private val locationPermissionReqCode = 1000;
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
@@ -96,12 +95,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         file.writeText(dataString)
     }
 
-    // https://thesimplycoder.com/396/getting-current-location-on-android-using-kotlin/
     private fun getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQ_CODE);
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionReqCode);
             return
         }
 
@@ -117,31 +115,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
                 for (location in locationResult.locations) {
                     if (location != null) {
-                        //TODO: UI updates.
+                        currentLocation = "${location.latitude},${location.longitude}"
                     }
                 }
             }
         }
         LocationServices.getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, mLocationCallback, null)
-
-        LocationServices.getFusedLocationProviderClient(this).lastLocation.addOnSuccessListener {
-            currentLocation = "${it.latitude},${it.longitude}"
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-            requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        when (requestCode) {
-            LOCATION_PERMISSION_REQ_CODE -> {
-                if (grantResults.isNotEmpty() &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                } else {
-                    Toast.makeText(this, "You need to grant permission to access location",
-                            Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
     }
 
     private fun onToggleOff() {

@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.seanh.lightsensor.models.Data
 
+// https://www.simplifiedcoding.net/kotlin-recyclerview-example/
 class DataAdapter(private val dataList: ArrayList<Data>) : RecyclerView.Adapter<DataAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
