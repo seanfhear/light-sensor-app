@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "225969241295",
+    "firebase_url": "https://urban-light-sensor.firebaseio.com",
+    "project_id": "urban-light-sensor",
+    "storage_bucket": "urban-light-sensor.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:225969241295:android:4da61c3812623dc37d0bba",
+        "android_client_info": {
+          "package_name": "com.seanh.lightsensor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "225969241295-c1q6jqqve3t2ss5db2fqaj7i5lqqbuu1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsuLNjKBmRqb1DAY_IjoWJZFpU6fzoiWs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "225969241295-c1q6jqqve3t2ss5db2fqaj7i5lqqbuu1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

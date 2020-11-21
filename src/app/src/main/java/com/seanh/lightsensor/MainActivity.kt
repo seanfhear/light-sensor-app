@@ -14,9 +14,13 @@ import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.*
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import com.seanh.lightsensor.models.Data
+import com.seanh.lightsensor.models.Reading
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.File
 import java.time.LocalDateTime
 
 
@@ -25,11 +29,12 @@ const val LightDeltaThresh = 1
 class MainActivity : AppCompatActivity(), SensorEventListener {
     private var sensorManager: SensorManager? = null
     private var currentLocation: String = ""
-    private var dataList = ArrayList<Array<String>>()
     private var lastLightLevel: Float = 0.0F
 
-    private val locationPermissionReqCode = 1000;
+    private val locationPermissionReqCode = 1000
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private lateinit var database: FirebaseDatabase
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     }
@@ -58,6 +63,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun recordEvent(event: SensorEvent) {
+        database = Firebase.database
+
         recyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         getCurrentLocation()
 
@@ -65,41 +72,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val light = event.values[0]
         val time = LocalDateTime.now().toString()
         val loc = currentLocation
+        val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
 
         data.add(Data("Light", "%.1f".format(light)))
         data.add(Data("Time", time))
         data.add(Data("Location", loc))
 
-        val entry: Array<String> = arrayOf(light.toString(), time, loc)
-        dataList.add(entry)
+        val ref: DatabaseReference = database.getReference("readings").push()
+        ref.setValue(Reading(
+            value = light.toString(),
+            time = time,
+            location = loc,
+            device = device
+        ))
 
         recyclerView.adapter = DataAdapter(data)
-    }
-
-    private fun writeEventsToFile() {
-        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        val randomString = (1..32)
-                .map { _ -> kotlin.random.Random.nextInt(0, charPool.size) }
-                .map(charPool::get)
-                .joinToString("");
-        val fileName = "LightData-${randomString}.csv"
-        val file = File(getExternalFilesDir("Data"), fileName)
-        val fileExists = file.exists()
-        if (!fileExists)
-            file.createNewFile()
-
-        var dataString = ""
-        for (entry in dataList) {
-            dataString = dataString + entry.joinToString(",") + "\n"
-        }
-        file.writeText(dataString)
     }
 
     private fun getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionReqCode);
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationPermissionReqCode)
             return
         }
 
@@ -125,11 +119,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun onToggleOff() {
         sensorManager!!.unregisterListener(this)
-        writeEventsToFile()
     }
 
     private fun onToggleOn() {
-        dataList = ArrayList()
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL)
     }
 }
