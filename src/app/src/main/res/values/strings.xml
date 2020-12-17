@@ -2,4 +2,7 @@
     <string name="app_name">Light Sensor</string>
     <string name="inactive">INACTIVE</string>
     <string name="active">ACTIVE</string>
+    <string name="sensor">Sensor</string>
+    <string name="map">Map</string>
+    <string name="mapbox_access_token">pk.eyJ1Ijoic2Vhbmhhc3NldHQiLCJhIjoiY2tpc3Yyc3FsMmp2ZzJ2cWpyamg3NXZ5byJ9.ohuDBpfX1mSRFlyOLhd6OA</string>
 </resources>
