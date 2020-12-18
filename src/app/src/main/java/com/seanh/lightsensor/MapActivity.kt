@@ -2,6 +2,7 @@ package com.seanh.lightsensor
 
 import android.graphics.Color
 import android.os.Bundle
+import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
@@ -18,13 +19,14 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.seanh.lightsensor.models.*
 import java.io.File
-import java.net.URI
 import java.net.URISyntaxException
 
 
 class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
+    private var mMap: MapboxMap? = null
     private var mapView: MapView? = null
+    private var time = "night"
 
     private lateinit var database: FirebaseDatabase
     var lightList: ArrayList<Reading> = ArrayList()
@@ -37,14 +39,27 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token))
         setContentView(R.layout.activity_map)
 
+        val btn: ToggleButton = findViewById(R.id.toggleButton)
+        btn.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) onToggleOn()
+            else onToggleOff()
+        }
+
+
         mapView = findViewById(R.id.mapView)
         mapView?.onCreate(savedInstanceState)
         mapView?.getMapAsync(this)
     }
 
     override fun onMapReady(mapboxMap: MapboxMap) {
-        mapboxMap.setStyle(
+        mMap = mapboxMap
+        val s = if (time == "day") {
+            Style.LIGHT
+        } else {
             Style.DARK
+        }
+        mapboxMap.setStyle(
+            s
         ) { style ->
             try {
                 val lightGeoJson = GeoJsonSource(
@@ -72,6 +87,8 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onResume() {
         super.onResume()
+        mMap?.let { onMapReady(it) }
+        getMarkers()
         mapView!!.onResume()
     }
 
@@ -99,21 +116,26 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         database = Firebase.database
         val ref: DatabaseReference = database.getReference(ReadingsDataRef)
 
+        lightList = ArrayList()
         val dataListener = object : ValueEventListener {
 
             override fun onDataChange(readingSnapshot: DataSnapshot) {
                 if (readingSnapshot.exists()) {
                     for (entry in readingSnapshot.children) {
                         val e = entry.value as HashMap<*, *>
-                        lightList.add(Reading(
-                            value = e.get("value") as String,
-                            time = e.get("time") as String,
-                            latitude = e.get("latitude") as Double,
-                            longitude = e.get("longitude") as Double,
-                            device = e.get("device") as String
-                        ))
+                        if (e.get("time") as String == time) {
+                            lightList.add(
+                                Reading(
+                                    value = e.get("value") as String,
+                                    time = e.get("time") as String,
+                                    latitude = e.get("latitude") as Double,
+                                    longitude = e.get("longitude") as Double,
+                                    device = e.get("device") as String
+                                )
+                            )
+                        }
                     }
-                    //createLightGeoJson()
+                    onMapReady(mMap!!)
                 }
             }
 
@@ -139,9 +161,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
             // arrange points into squares so they can be extruded
             val offset = 0.0002
+            val y_offset = 0.000125
             coords.add(arrayListOf(entry.longitude, entry.latitude))
-            coords.add(arrayListOf(entry.longitude, entry.latitude + offset))
-            coords.add(arrayListOf(entry.longitude + offset, entry.latitude + offset))
+            coords.add(arrayListOf(entry.longitude, entry.latitude + y_offset))
+            coords.add(arrayListOf(entry.longitude + offset, entry.latitude + y_offset))
             coords.add(arrayListOf(entry.longitude + offset, entry.latitude))
             coords.add(arrayListOf(entry.longitude, entry.latitude))
 
@@ -164,5 +187,15 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         f.writeText(jsonString)
 
         return jsonString
+    }
+
+    private fun onToggleOff() {
+        time = "night"
+        onResume()
+    }
+
+    private fun onToggleOn() {
+        time = "day"
+        onResume()
     }
 }

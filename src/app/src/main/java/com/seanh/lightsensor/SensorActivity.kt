@@ -8,6 +8,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -44,15 +46,23 @@ class SensorActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var database: FirebaseDatabase
 
+    lateinit var mainHandler: Handler
+
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event!!.sensor.type == Sensor.TYPE_LIGHT) {
             if (kotlin.math.abs(event.values[0] - lastLightLevel) > LightDeltaThresh) {
-                recordEvent(event)
                 lastLightLevel = event.values[0]
             }
+        }
+    }
+
+    private val updateTextTask = object : Runnable {
+        override fun run() {
+            recordEvent()
+            mainHandler.postDelayed(this, 1000)
         }
     }
 
@@ -63,6 +73,9 @@ class SensorActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager?
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        getCurrentLocation()
+        mainHandler = Handler(Looper.getMainLooper())
+
         val btn: ToggleButton = findViewById(R.id.toggleBtn)
         btn.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) onToggleOn()
@@ -70,20 +83,27 @@ class SensorActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
-    private fun recordEvent(event: SensorEvent) {
+    private fun recordEvent() {
         database = Firebase.database
 
         recyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         getCurrentLocation()
 
         val data = ArrayList<Data>()
-        val light = event.values[0]
-        val time = LocalDateTime.now().toString()
+        val now = LocalDateTime.now()
+        val hour = now.hour
+        var time: String = ""
+        println(hour)
+        time = if (hour in 7..17) {
+            "day"
+        } else {
+            "night"
+        }
 
         if (currentLocation == "") return
 
-        data.add(Data("Light", "%.1f".format(light)))
-        data.add(Data("Time", time))
+        data.add(Data("Light", "%.1f".format(lastLightLevel)))
+        data.add(Data("Time", now.toString()))
         data.add(Data("Location", currentLocation))
 
         val loc = currentLocation.split(",")
@@ -93,7 +113,7 @@ class SensorActivity : AppCompatActivity(), SensorEventListener {
         val ref: DatabaseReference = database.getReference(ReadingsDataRef).push()
         ref.setValue(
             Reading(
-                value = light.toString(),
+                value = lastLightLevel.toString(),
                 time = time,
                 latitude = lat,
                 longitude = lon,
@@ -115,8 +135,8 @@ class SensorActivity : AppCompatActivity(), SensorEventListener {
 
         // https://stackoverflow.com/questions/29441384/fusedlocationapi-getlastlocation-always-null
         val mLocationRequest = LocationRequest.create()
-        mLocationRequest.interval = 60000
-        mLocationRequest.fastestInterval = 5000
+        mLocationRequest.interval = 3000
+        mLocationRequest.fastestInterval = 500
         mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         val mLocationCallback: LocationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
@@ -163,9 +183,11 @@ class SensorActivity : AppCompatActivity(), SensorEventListener {
 
     private fun onToggleOff() {
         sensorManager!!.unregisterListener(this)
+        mainHandler.removeCallbacks(updateTextTask)
     }
 
     private fun onToggleOn() {
         sensorManager!!.registerListener(this, sensorManager!!.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL)
+        mainHandler.post(updateTextTask)
     }
 }
