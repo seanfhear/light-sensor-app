@@ -171,7 +171,12 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             coords_top.add(coords)
             geoJsonGeometry.coordinates = coords_top
 
-            geoJsonProperty.e = entry.value.toDouble() + 1
+            if (time == "day") {
+                geoJsonProperty.e = entry.value.toDouble() / 15
+            } else {
+                geoJsonProperty.e = entry.value.toDouble() + 1
+            }
+
 
             geoJsonFeature.geometry = geoJsonGeometry
             geoJsonFeature.properties = geoJsonProperty
